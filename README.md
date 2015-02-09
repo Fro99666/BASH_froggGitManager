@@ -12,7 +12,7 @@ Git Project Manager
 ## create Server Remote
 * bash maintenance.sh
 
-## commit & push change
+## commit & push change from Remote to Origin
 * bash maintenance.sh
 
 # Parameters (can be change directly in file or send by parameters to .sh)
