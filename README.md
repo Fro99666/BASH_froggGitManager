@@ -1,18 +1,18 @@
 # BASH_froggGitManager
 Git Project Manager
 
-to start script:
-bash maintenance.sh
+## to start script:
+* bash maintenance.sh
 
 # optionnal commande:
 
-* create Server Origin
+## create Server Origin
 * bash maintenance.sh -create
 
-* create Server Remote
+## create Server Remote
 * bash maintenance.sh
 
-* commit & push change
+## commit & push change
 * bash maintenance.sh
 
 # Parameters (can be change directly in file or send by parameters to .sh)
