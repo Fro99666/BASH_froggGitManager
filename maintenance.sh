@@ -11,15 +11,19 @@
 #   _\ \/  \.______./  \/ /_
 #   ___/ /\__________/\ \___
 #  *****************************
-#  * WebMaintenance V 1.000    *
-#  * ----------------------    *
-#  * Create/Save GIT Web       *
-#  * Project using Git server  *
-#  * Author: Marsiglietti Remy *
-#  * Powered by cv.frogg.fr    *
-#  * For Arnaud Marsiglietti   *
-#  * Copyright 2015            *
-#  *****************************
+SCN="WebMaintenance"   			# script name
+SCD="Create/Save GIT Web"		# script description
+SCT="Debian"					# script OS Test
+SCC="bash ${0##*/}"				# script call
+SCV="1.001"						# script version
+SCO="2015/02/09"				# script date creation
+SCU="2015/02/13"				# script last modification
+SCA="Marsiglietti Remy (Frogg)"	# script author
+SCM="admin@frogg.fr"			# script author Mail
+SCS="cv.frogg.fr"				# script author Website
+SCF="Arnaud Marsiglietti"		# script made for
+SCP=$PWD						# script path
+SCY="2015"						# script copyrigth year
 
 # TODO : Clean Test GIT Exist (search TODO in this file)
 
@@ -31,24 +35,21 @@
 
 #===SERVER INFOS
 #Git server address
-gIP="xxx"
+gIP="home.frogg.fr"
 #Git server port
-gPort="xxx"
+gPort="xxxxx"
 #Git ssh server User
-gUser="xxx"
+gUser="xxxxx"
 #Git server directory
 gDir="/opt/git/"
 #Git project directory
-pDir="xxx.git"
+pDir="xxxxx.git"
 #Git userName
-gMail="admin@frogg.fr"
+gMail="admin@rogg.fr"
 #remote directory (relative to this script path)
 rDir="public_html/"
 #Project version file (in project root folder) 
 vFile="version.txt"
-
-#Script file name
-scriptFile=${0##*/}
 
 #===COLORS
 INFOun="\e[4m"							#underline
@@ -105,6 +106,30 @@ info()
 echo -e "${INFObb}$1${NORM}"
 }
 
+# echo an title format
+title()
+{
+case $2 in
+	"0")echo -e "\n${INFObb}${INFOun}$1${NORM}";;
+	"1")
+		x=0 	#reset lvl 3
+		y=0		#reset lvl 2
+		((z++))	#increase lvl 1
+		echo -e "\n${INFObb}${INFOun}${z}] $1${NORM}"
+	;;
+	"2")
+		x=0 	#reset lvl 3
+		((y++))	#increase lvl 2
+		echo -e "\n${INFOb}${INFOun}${z}.${y}] $1${NORM}"
+	;;
+	"3")
+		((x++)) #increase lvl 3
+		echo -e "\n${INFOb}${INFOun}${z}.${y}.${x}] $1${NORM}"
+	;;
+	*)echo -e "\n$1";;
+esac
+}
+
 #===FUNCTIONS
 #func used to ask user to answer yes or no, return 1 or 0
 makeachoice()
@@ -122,6 +147,19 @@ makeachoice()
 	return $userChoice
 	}
 
+#newaction {question} {title}
+newaction()
+{
+#ask user to continue
+makeachoice "$2"
+if [ $? = 0 ];then
+	warn "Script aborted by user"
+	exit 1
+else
+	title "$1" "1"
+fi
+}	
+	
 #Check if git project has been initialized (hide result message)
 gitExist()
 	{
@@ -153,10 +191,12 @@ do
 done	
 
 echo -e "\n*******************************"
-echo -e "# $scriptFile"
-echo -e "# Create/Save/Update Git project"
-echo -e "# v1.000, Powered By Frogg - Copyright 2015"
-echo -e "# Call : bash $scriptFile\n"
+echo -e "# ${SCN}"
+echo -e "# ${SCD}"
+echo -e "# Tested on   : ${SCT}"
+echo -e "# v${SCV} ${SCU}, Powered By ${SCA} - ${SCM} - ${SCS} - Copyright ${SCY}"
+echo -e "# For         : ${SCF}"
+echo -e "# script call : ${SCC}\n"
 echo -e "Optional Parameters [Default values]"
 echo -e " -create: Create the Git project [NoValuesRequired]"
 echo -e " -ip: Origin Server Git Address [$gIP]"	
@@ -314,6 +354,9 @@ git add -A
 ##Add news file to local git
 info "...committing files please wait..."
 git commit -a
+##Update local project with server change
+info "...downloading & merging server changed files please wait..."
+git pull
 ##Create the new version in git
 if git tag ${version} -m '${version}'  &> /dev/null;then
 info "...committing tag ${version} please wait..."
