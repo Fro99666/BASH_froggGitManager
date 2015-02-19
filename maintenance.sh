@@ -36,7 +36,7 @@ SCY="2015"						# script copyright year
 
 #===SERVER INFOS
 #Git server address
-gIP="home.frogg.fr"
+gIP="xxxxx.frogg.fr"
 #Git server port
 gPort="xxxxx"
 #Git ssh server User
