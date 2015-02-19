@@ -15,18 +15,19 @@ SCN="WebMaintenance"   			# script name
 SCD="Create/Save GIT Web"		# script description
 SCT="Debian"					# script OS Test
 SCC="bash ${0##*/}"				# script call
-SCV="1.001"						# script version
+SCV="1.003"						# script version
 SCO="2015/02/09"				# script date creation
-SCU="2015/02/13"				# script last modification
+SCU="2015/02/19"				# script last modification
 SCA="Marsiglietti Remy (Frogg)"	# script author
 SCM="admin@frogg.fr"			# script author Mail
 SCS="cv.frogg.fr"				# script author Website
 SCF="Arnaud Marsiglietti"		# script made for
 SCP=$PWD						# script path
-SCY="2015"						# script copyrigth year
+SCY="2015"						# script copyright year
 
-# TODO : Clean Test GIT Exist (search TODO in this file)
-
+#find TODO in this file:
+# - TODO : check version pattern [v][0-9]+[\.][0-9]{4}
+# - TODO : set %04d as var
 #############
 # Script    : Commit & Create a new version auto incremented on Local & Origin server
 # Important : - Git version format has to be vX.XXX in project root folder in file version.txt
@@ -162,14 +163,45 @@ fi
 	
 #Check if git project has been initialized (hide result message)
 gitExist()
-	{
-	exist=0
-	if git status &> /dev/null;then
-		#Git has been found
-		exist=1
-	fi
-	return $exist
-	}
+{
+exist=0
+if git status &> /dev/null;then
+	#Git has been found
+	exist=1
+fi
+return $exist
+}
+
+getGitIp()
+{
+#Get server IP Adress from Git configuration
+srvOriginGit=$(git config --get remote.origin.url)
+IFS='@' read -a arraySrv <<< "$srvOriginGit"
+IFS=':' read -a arraySrv2 <<< "${arraySrv[1]}"
+echo ${arraySrv2[0]}
+}
+	
+getNewGitVersion()
+{
+#get last version
+oldVersion=$( git tag | tail -1 )
+#split it
+arrVersion=( ${oldVersion//./ } )
+#get before . version part
+preVersion=${arrVersion[0]//v/}
+#get after . version part
+subVersion=$(expr ${arrVersion[1]} + 1)
+#check subversion
+if [ $subVersion -eq 9999 ];then
+	subVersion=0
+	preVersion=$(expr ${preVersion} + 1)
+fi
+#format subversion
+#TODO : set %04d as var
+subVersion=$(printf "%04d\n" $subVersion)
+#return
+echo "v${preVersion}.${subVersion}"
+}	
 	
 #===================[ 0 ] SCRIPT MENU=================
 #--Process Check param
@@ -241,17 +273,21 @@ if [ $create = 1 ]; then
 		git config credential.helper 'cache --timeout=3600'
 		# Allow modification on master branch from remote GIT
 		git config receive.denyCurrentBranch ignore
+		# Allow remote folder to be owned by remote user
+		git config core.sharedRepository 1
+		#set version
+		if [ -e $vFile ];then
+			#TODO : check version pattern [v][0-9]+[\.][0-9]{4}
+			version=$(cat $vFile)
+		else
+			#TODO : set %04d as var
+			version="v1."$(printf "%04d\n" $subVersion)
+			echo $version > $vFile
+		fi
 		# Init first commit
 		git add .
 		git commit -m "Project '$pDir' Init"
-		if [ -e $vFile ];then
-			version=$(cat $vFile)
-		else
-			version="v1.000"
-			echo $version > $vFile
-		fi		
 		git tag ${version} -m '${version}'
-		
 		# success message
 		good "Git project '$pDir' has been successfully configured in '$gDir$pDir'" 	
 	else
@@ -264,33 +300,23 @@ fi
 
 #===================[ 2 ] GET OR SAVE PROJECT [REMOTE]===================
 #server IP Adress
-srvOriginGit=""
-
-# => TODO CLEAN THIS PART
-if gitExist;then
-	#Get server IP Adress from default configuration
-	srvOriginGit=$gIP
+srvOriginGit=$gIP
+if gitExist;then	
 	#go to remote dir
 	mkdir -p ${rDir}
 	cd ${rDir}
 	good " [ A ] Project folder is now './${rDir}' !"
-	
+	#Get server IP Adress from default configuration
 	if gitExist;then
 		#Get server IP Adress from default configuration
 		srvOriginGit=$gIP
 	else
 		#Get server IP Adress from Git configuration
-		srvOriginGit=$(git config --get remote.origin.url)
-		IFS='@' read -a arraySrv <<< "$srvOriginGit"
-		IFS=':' read -a arraySrv2 <<< "${arraySrv[1]}"
-		srvOriginGit=${arraySrv2[0]}
+		srvOriginGit=$(getGitIp)
 	fi	
 else
 	#Get server IP Adress from Git configuration
-	srvOriginGit=$(git config --get remote.origin.url)
-	IFS='@' read -a arraySrv <<< "$srvOriginGit"
-	IFS=':' read -a arraySrv2 <<< "${arraySrv[1]}"
-	srvOriginGit=${arraySrv2[0]}
+	srvOriginGit=$(getGitIp)
 fi
 
 #Test if Git server port is UP
@@ -334,20 +360,10 @@ fi
 #
 ##################LOCAL GIT
 #
-##update current version number
-oldVersion=$(cat $vFile)
-arrVersion=( ${oldVersion//./ } )
-version=${arrVersion[0]}"."$(printf "%03d\n" $(expr ${arrVersion[1]} + 1))
-##check if incrementation is ok
-if [ $version = $oldVersion ]; then
-	err " [ A ] An error occurred on version number:\n        $vFile equals git version, $vFile should be equals to git version -1 ! \n        the script stopped"
-	exit
-else
-	echo $version > $vFile
-fi
-
-##Capture release title
-info "Old version was $oldVersion \n new version is $version"
+#Correct git infos
+git config user.name "${gMail%%@*}"
+git config user.email "$gMail"
+git config core.sharedRepository 1
 ##Add new file not referenced
 info "...adding files please wait..."
 git add -A
@@ -357,36 +373,32 @@ git commit -a
 ##Update local project with server change
 info "...downloading & merging server changed files please wait..."
 git pull
+##update current git version number
+version=$(getNewGitVersion)
+echo $version > $vFile
+info "...updating version file to ${version}..."
+git commit -a -m 'update version file to ${version}' 
 ##Create the new version in git
-if git tag ${version} -m '${version}'  &> /dev/null;then
-info "...committing tag ${version} please wait..."
+if git tag ${version} -m '${version}';then
+	info "...committing tag ${version} please wait..."
 else
-	if makeachoice "merge Version ${version} cause it already exist in the project"; then
-		warn " [ END ] End of the script, aborted by user"
-		exit		
-	else
-		if git tag -d ${version} &> /dev/null;then
-			git tag ${version} -m '${version}'
-		else
-			err " [ END ] An error occurred while deleting tag ${version}, if error occur another time, please contact the administrator"
-			exit		
-		fi		
-	fi
+	err " [ END ] An error occurred while committing tag ${version}"
+	exit		
 fi
 #
 ##################ORIGIN GIT
-#
-# Ask if sure to send version origin  GIT
-#if makeachoice "save the new version into ORIGIN GIT"; then
-#	warn " [ A ] End of the script, aborted by user"
-#	exit
-#fi
 ##Send file to centralized GIT server
-if git push; then
+if git push -f; then
 	##send tags
-	git push --tags
+	git pull --tags
+	if git push --tags; then
+		info "...tags pushed..."
+	else
+		err " [ END ] An error occurred while pushing tag ${version}"
+		exit
+	fi
 else
-	err " [ END ] Login error, try again\n         the script stopped"
+	err " [ END ] An error occurred while pushing files to git server"
 	exit
 fi
 #Send success message
