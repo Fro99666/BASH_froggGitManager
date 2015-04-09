@@ -15,9 +15,9 @@ SCN="WebMaintenance"   			# script name
 SCD="Create/Save GIT Web"		# script description
 SCT="Debian"					# script OS Test
 SCC="bash ${0##*/}"				# script call
-SCV="1.003"						# script version
+SCV="1.004"						# script version
 SCO="2015/02/09"				# script date creation
-SCU="2015/02/19"				# script last modification
+SCU="2015/04/09"				# script last modification
 SCA="Marsiglietti Remy (Frogg)"	# script author
 SCM="admin@frogg.fr"			# script author Mail
 SCS="cv.frogg.fr"				# script author Website
@@ -46,10 +46,10 @@ gDir="/opt/git/"
 #Git project directory
 pDir="xxxxx.git"
 #Git userName
-gMail="admin@rogg.fr"
+gMail="arnaud.marsiglietti@ima.umn.edu"
 #remote directory (relative to this script path)
 rDir="public_html/"
-#Project version file (in project root folder) 
+#Project version file (in project root folder)
 vFile="version.txt"
 
 #===COLORS
@@ -159,8 +159,8 @@ if [ $? = 0 ];then
 else
 	title "$1" "1"
 fi
-}	
-	
+}
+
 #Check if git project has been initialized (hide result message)
 gitExist()
 {
@@ -180,7 +180,7 @@ IFS='@' read -a arraySrv <<< "$srvOriginGit"
 IFS=':' read -a arraySrv2 <<< "${arraySrv[1]}"
 echo ${arraySrv2[0]}
 }
-	
+
 getNewGitVersion()
 {
 #get last version
@@ -201,8 +201,8 @@ fi
 subVersion=$(printf "%04d\n" $subVersion)
 #return
 echo "v${preVersion}.${subVersion}"
-}	
-	
+}
+
 #===================[ 0 ] SCRIPT MENU=================
 #--Process Check param
 #VAR create new git project
@@ -220,7 +220,7 @@ do
 		"-remote")	rDir=${val[1]};;
 		"-create")	create=1;;
 	esac
-done	
+done
 
 echo -e "\n*******************************"
 echo -e "# ${SCN}"
@@ -231,7 +231,7 @@ echo -e "# For         : ${SCF}"
 echo -e "# script call : ${SCC}\n"
 echo -e "Optional Parameters [Default values]"
 echo -e " -create: Create the Git project [NoValuesRequired]"
-echo -e " -ip: Origin Server Git Address [$gIP]"	
+echo -e " -ip: Origin Server Git Address [$gIP]"
 echo -e " -port: Origin Server Git Port [$gPort]"
 echo -e " -user: Origin Server Git User login [$gUser]"
 echo -e " -git: Origin Server Git Path [$gDir]"
@@ -256,7 +256,7 @@ if [ $create = 1 ]; then
 		mkdir -p $gDir$pDir
 		good "Creating Git Project from scratch in folder '$gDir$pDir'"
 	else
-		good "Found Project Files in folder '$gDir$pDir'" 
+		good "Found Project Files in folder '$gDir$pDir'"
 	fi
 	#Change current folder to git project folder
 	cd $gDir$pDir
@@ -289,10 +289,10 @@ if [ $create = 1 ]; then
 		git commit -m "Project '$pDir' Init"
 		git tag ${version} -m '${version}'
 		# success message
-		good "Git project '$pDir' has been successfully configured in '$gDir$pDir'" 	
+		good "Git project '$pDir' has been successfully configured in '$gDir$pDir'"
 	else
 		# already exist message
-		warn "Git project '$pDir' already exist in '$gDir$pDir', nothing need to be done" 	
+		warn "Git project '$pDir' already exist in '$gDir$pDir', nothing need to be done"
 	fi
 	#stop script
 	exit
@@ -301,7 +301,7 @@ fi
 #===================[ 2 ] GET OR SAVE PROJECT [REMOTE]===================
 #server IP Adress
 srvOriginGit=$gIP
-if gitExist;then	
+if gitExist;then
 	#go to remote dir
 	mkdir -p ${rDir}
 	cd ${rDir}
@@ -313,16 +313,19 @@ if gitExist;then
 	else
 		#Get server IP Adress from Git configuration
 		srvOriginGit=$(getGitIp)
-	fi	
+	fi
 else
 	#Get server IP Adress from Git configuration
 	srvOriginGit=$(getGitIp)
 fi
 
+#check if empty (case local git server pulled)
+[ -z $srvOriginGit ]&&srvOriginGit=$gIP
+
 #Test if Git server port is UP
 check "...Checking if GIT Origin server '${srvOriginGit}' is available, please wait..."
 if nc -w5 -z ${srvOriginGit} ${gPort} &> /dev/null;then
-	good " [ A ] Server Git Origin [${srvOriginGit}:${gPort}] port is opened !"	
+	good " [ A ] Server Git Origin [${srvOriginGit}:${gPort}] port is opened !"
 else
 	err " [ A ] Can't access to Server Git Origin Port [${srvOriginGit}:${gPort}], End of the script"
 	exit
@@ -377,13 +380,13 @@ git pull
 version=$(getNewGitVersion)
 echo $version > $vFile
 info "...updating version file to ${version}..."
-git commit -a -m 'update version file to ${version}' 
+git commit -a -m 'update version file to ${version}'
 ##Create the new version in git
 if git tag ${version} -m '${version}';then
 	info "...committing tag ${version} please wait..."
 else
 	err " [ END ] An error occurred while committing tag ${version}"
-	exit		
+	exit
 fi
 #
 ##################ORIGIN GIT
