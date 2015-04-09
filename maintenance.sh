@@ -380,9 +380,9 @@ git pull
 version=$(getNewGitVersion)
 echo $version > $vFile
 info "...updating version file to ${version}..."
-git commit -a -m 'update version file to ${version}'
+git commit -a -m "update version file to ${version}"
 ##Create the new version in git
-if git tag ${version} -m '${version}';then
+if git tag ${version} -m "${version}";then
 	info "...committing tag ${version} please wait..."
 else
 	err " [ END ] An error occurred while committing tag ${version}"
